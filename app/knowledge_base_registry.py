@@ -8,7 +8,7 @@ Example:
     +-- "550e8400-e29b-41d4-a716-446655440000" -> KnowledgeBase
         +-- source_documents: [Document(
         |       page_content="Load documents. Search relevant chunks.",
-        |       metadata={"source": "ingestion.txt", "source_type": "file"})]
+        |       metadata={"source": "ingestion.txt", "source_type": "txt"})]
         +-- chunks: [
         |       Document(page_content="Load documents.", metadata=M),
         |       Document(page_content="Search relevant chunks.", metadata=M)]
@@ -20,7 +20,7 @@ Example:
                           "chunk-b" -> second chunk's text + metadata
 
     M abbreviates each chunk's metadata inherited from the source Document:
-    {"source": "ingestion.txt", "source_type": "file"}.
+    {"source": "ingestion.txt", "source_type": "txt"}.
     Boundaries, chunk IDs, and 3D vectors are illustrative, not actual output.
     Real chunk boundaries/overlap and vector dimensions depend on configuration.
 
