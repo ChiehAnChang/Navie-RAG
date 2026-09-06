@@ -90,6 +90,10 @@ class KnowledgeBaseRegistry:
         # Map each collection ID to its source documents, chunks, and index.
         self._knowledge_bases: dict[str, KnowledgeBase] = {}
 
+    def list_ids(self) -> list[str]:
+        """Return current collection IDs for the frontend selector."""
+        return list(self._knowledge_bases)
+
     def create(
         self,
         vector_index: FAISS,

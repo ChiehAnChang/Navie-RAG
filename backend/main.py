@@ -15,10 +15,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import SETTINGS
-from app.loaders import load_text, load_uploaded_file
-from app.RAG_Orchestration import RAGService
-from app.api_models import (
+from backend.config import SETTINGS
+from backend.loaders import load_text, load_uploaded_file
+from backend.RAG_Orchestration import RAGService
+from backend.api_models import (
     AnswerResponse,
     IngestResponse,
     QuestionRequest,
@@ -68,6 +68,12 @@ def health_test() -> dict[str, str]:
         Check that the API process responds, without probing Gemini or external services.
     """
     return {"status": "ok"}
+
+
+@app.get("/knowledge-bases", response_model=list[str])
+def list_knowledge_bases(request: Request) -> list[str]:
+    """List the collection IDs available in this API process."""
+    return request.app.state.rag.knowledge_bases.list_ids()
 
 
 @app.post("/ingest/text", response_model=IngestResponse)
