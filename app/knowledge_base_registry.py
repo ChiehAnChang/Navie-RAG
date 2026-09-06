@@ -169,7 +169,3 @@ class KnowledgeBaseRegistry:
         # Retain the source text and chunks alongside the updated vector index.
         knowledge_base.source_documents.extend(source_documents)
         knowledge_base.chunks.extend(chunks)
-
-
-# Temporarily disabled summary documentation (KnowledgeBase attributes):
-#         source_documents: Loaded Documents before splitting, retained for summaries.
