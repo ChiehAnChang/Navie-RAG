@@ -3,7 +3,6 @@ __pycache__/
 *.py[cod]
 .env
 .env.*
-!.env.example
 .DS_Store
 /README.md
 .pytest_cache/
