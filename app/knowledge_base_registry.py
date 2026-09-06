@@ -63,7 +63,7 @@ class KnowledgeBase:
 
     Attributes:
         vector_index: FAISS wrapper storing chunk vectors and linked Documents.
-        source_documents: Loaded Documents before splitting, retained for summaries.
+        source_documents: Retained source Documents before splitting.
         chunks: Split Documents with text and source metadata, used for retrieval.
 
     Both lists contain Document objects, not embeddings. The dataclass creates
