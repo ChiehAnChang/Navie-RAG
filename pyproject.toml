@@ -1,0 +1,23 @@
+[project]
+name = "naive-rag-gemini"
+version = "0.1.0"
+description = "Simple Gemini + LangChain Naive RAG API for text and uploaded documents"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "docx2txt",
+    "faiss-cpu",
+    "fastapi",
+    "langchain-community",
+    "langchain-core",
+    "langchain-google-genai>=4.0.0",
+    "langchain-text-splitters",
+    "pydantic>=2.0.0",
+    "pydantic-settings",
+    "pypdf",
+    "python-multipart",
+    "uvicorn[standard]",
+]
+
+[tool.uv]
+package = false
