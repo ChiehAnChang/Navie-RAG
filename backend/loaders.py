@@ -16,7 +16,7 @@ def load_text(text: str, source_name: str = "pasted-text") -> list[Document]:
     return [
         Document(
             page_content=text,
-            metadata={"source": source_name, "source_type": "text"},
+            metadata={"source": source_name, "source_type": "txt"},
         )
     ]
 

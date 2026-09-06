@@ -7,8 +7,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from app.config import SETTINGS
-from app.knowledge_base_registry import KnowledgeBaseRegistry
+from backend.config import SETTINGS
+from backend.knowledge_base_registry import KnowledgeBaseRegistry
 
 
 QA_PROMPT = ChatPromptTemplate.from_messages(
