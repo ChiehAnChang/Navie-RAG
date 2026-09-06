@@ -30,3 +30,7 @@ docker compose up --build
 - Frontend: [http://localhost:8501](http://localhost:8501)
 - Backend: [http://localhost:8000](http://localhost:8000)
 - FastAPI docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+## Demo
+
+[![Watch the demo](https://img.youtube.com/vi/DMssfsXcEWw/hqdefault.jpg)](https://youtu.be/DMssfsXcEWw)
