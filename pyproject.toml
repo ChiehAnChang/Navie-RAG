@@ -15,6 +15,8 @@ dependencies = [
     "pydantic-settings",
     "pypdf",
     "python-multipart",
+    "requests>=2.34.2",
+    "streamlit>=1.63.0",
     "uvicorn[standard]",
 ]
 
