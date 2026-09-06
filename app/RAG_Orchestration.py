@@ -1,4 +1,4 @@
-"""Orchestrate indexing, QA, and summarization of loaded documents."""
+"""Orchestrate source-document splitting, chunk indexing, and scoped RAG answers."""
 
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
@@ -24,26 +24,13 @@ QA_PROMPT = ChatPromptTemplate.from_messages(
             
             Your Question is: \n{question}\n\n
             
-            My Answer to the Question is: \n{answer}\n\n
+            My Answer to the Question is: \n<generated answer>\n\n
             
             """,
         ),
         (
             "human",
             "Question:\n{question}\n\nRetrieved context:\n{context}",
-        ),
-    ]
-)
-
-SUMMARY_PROMPT = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            "Summarize the provided source content. Focus on the important ideas and avoid filler.",
-        ),
-        (
-            "human", 
-            "Source content:\n{content}"
         ),
     ]
 )
@@ -81,71 +68,74 @@ class RAGService:
         self.knowledge_bases = KnowledgeBaseRegistry()
         # Each chain formats a prompt, calls the model, then extracts text.
         self.answer_generation_chain = QA_PROMPT | self.llm | StrOutputParser()
-        self.summary_chain = SUMMARY_PROMPT | self.llm | StrOutputParser()
 
     def ingest(self, documents: list[Document], knowledge_base_id: str | None = None,) -> tuple[str, int]:
-        """Split, embed, and store documents in a knowledge base.
+        """Split source documents and insert their chunks into a collection's index.
 
-        Assumptions:
-                    Text is already extracted and yields at least one usable chunk.
-                    Source metadata is recommended for attribution; page is optional.
-        
         Args:
-            documents: Loaded Documents containing text and optional metadata.
-            knowledge_base_id: Existing knowledge base ID; None or empty creates one.
+            documents: Loaded source Documents containing text and source metadata.
+            knowledge_base_id: Existing collection UUID; None or empty creates one.
 
         Returns:
             (knowledge_base_id, chunks_added) for this ingestion call.
 
+        Assumptions:
+            Text is already extracted. One file may yield multiple source Documents.
+            Source metadata is recommended for attribution; page is optional.
+
         Raises:
             ValueError: No usable chunks are produced.
+            KeyError: The requested knowledge base does not exist.
+            Exception: Chunk embedding or vector index insertion fails.
         """
 
-        # Use splitter to break documents into smaller chunks for embedding and retrieval.
+        # Split source Documents into chunk Documents, carrying source metadata forward.
         chunks = self.splitter.split_documents(documents)
         
-        # If no chunks are produced, raise an error to indicate the source was not usable.
         if not chunks:
             raise ValueError("No usable text was found in the source.")
 
-        # A knowledge base groups documents for retrieval and summarization.
-        # If provided, add the new documents and chunks to the existing knowledge base.
+        # Reuse the collection scope: embed and insert new chunks into its index.
         if knowledge_base_id:
             self.knowledge_bases.add_documents(knowledge_base_id, documents, chunks)
             return knowledge_base_id, len(chunks)
 
-        # If no knowledge base ID is provided, create a new knowledge base with the chunks.
-        # The FAISS wrapper embeds the chunks and builds a searchable index.
-        # We give FAISS the chunks and our embeddings method to create the vector store.
+        # Initial insertion: embed each chunk, index its vector, and retain its
+        # text/metadata in the FAISS wrapper docstore with an internal ID mapping.
         vector_index = FAISS.from_documents(chunks, self.embeddings) 
         
-        # Keep source documents as well, since summarization uses their text.
+        # Register the prepared index with source documents and chunks under a new UUID.
         new_knowledge_base_id = self.knowledge_bases.create(vector_index, documents, chunks)
         return new_knowledge_base_id, len(chunks)
 
     def ask(self, question: str, knowledge_base_id: str, k: int | None = None):
-        """Answer a question using chunks retrieved from a knowledge base.
-        
-        Assumptions:
-            The question is nonempty and k is positive or None.
-            The knowledge base was created in this service's knowledge base registry.
-            
+        """Answer a question using chunks from the selected collection scope.
+
         Args:
             question: Question text to answer.
-            knowledge_base_id: ID of the knowledge base to search.
+            knowledge_base_id: UUID selecting the knowledge base's vector index.
             k: Maximum chunks to retrieve; None or zero uses the default.
 
         Returns:
-            (answer, retrieved_documents), including chunk metadata.
+            (answer, retrieved_documents), where retrieved_documents are chunks
+            containing text and source metadata, not full source documents.
+
+        Assumptions:
+            The question is nonempty and k is positive or None.
+            The knowledge base exists in this service's registry.
+
+        Raises:
+            KeyError: The knowledge base does not exist.
+            Exception: Retrieval or answer generation fails.
         """
         
-        # Retrieve the knowledge base selected by the caller.
+        # Select one collection scope; this does not search across knowledge bases.
         knowledge_base = self.knowledge_bases.get(knowledge_base_id)
         
         # Use the provided k or the default from global SETTINGS.
         retrieval_k = k or SETTINGS.default_retrieval_k
         
-        # The wrapper embeds the question and searches the existing index.
+        # Embed the question, search chunk vectors, and return linked chunk Documents.
         retrieved_documents = knowledge_base.vector_index.similarity_search(question, k=retrieval_k)
 
         context_sections = []
@@ -165,4 +155,43 @@ class RAGService:
         )
         return answer, retrieved_documents
 
-    
+
+# Temporarily disabled: YouTube ingestion and/or summaries.
+# Move each block back to its indicated scope before uncommenting.
+
+# SUMMARY_PROMPT = ChatPromptTemplate.from_messages(
+#     [
+#         (
+#             "system",
+#             "Summarize the provided source content. Focus on the important ideas and avoid filler.",
+#         ),
+#         (
+#             "human",
+#             "Source content:\n{content}"
+#         ),
+#     ]
+# )
+
+# Restore inside RAGService.__init__.
+#         self.summary_chain = SUMMARY_PROMPT | self.llm | StrOutputParser()
+
+# Restore as a RAGService method.
+#     def summarize(self, knowledge_base_id: str) -> str:
+#         """Summarize retained source text in one knowledge base without chunk retrieval.
+#
+#         Args:
+#             knowledge_base_id: Knowledge base UUID string returned by ingestion.
+#
+#         Returns:
+#             Generated summary; input is truncated to SETTINGS.max_summary_chars characters.
+#
+#         Raises:
+#             KeyError: The knowledge base does not exist in this process registry.
+#             Exception: The model call or summary generation fails.
+#         """
+#         knowledge_base = self.knowledge_bases.get(knowledge_base_id)
+#         content = "\n\n".join(
+#             document.page_content for document in knowledge_base.source_documents
+#         )
+#         content = content[: SETTINGS.max_summary_chars]
+#         return self.summary_chain.invoke({"content": content})
