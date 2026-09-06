@@ -5,6 +5,7 @@ __pycache__/
 .env.*
 !.env.example
 .DS_Store
+/README.md
 .pytest_cache/
 .ruff_cache/
 dist/
